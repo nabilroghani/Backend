@@ -1,5 +1,5 @@
 const bcrypt = require("bcrypt");
-
+const jwt = require("jsonwebtoken");
 const users = [];
 
 const signupUser = async (req, res) => {
@@ -29,4 +29,26 @@ const getuser = (req, res) => {
   res.send(users);
 };
 
-module.exports = { signupUser, getuser };
+const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.send("Enter Email and Password");
+  }
+
+  const user = users.find((u) => u.email === email);
+  if (!user) {
+    return res.send("Invalid Credential");
+  }
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return res.send("Invalid Credential");
+  }
+  const token = jwt.sign({ email: user.email }, process.env.SECRET_KEY, {
+    expiresIn: "1h",
+  });
+
+  res.json({ message: `login succesfully`, token: token });
+};
+
+module.exports = { signupUser, getuser, loginUser };
